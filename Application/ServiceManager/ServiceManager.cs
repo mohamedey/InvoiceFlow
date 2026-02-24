@@ -1,7 +1,7 @@
 ﻿using Application.Interfaces.IServices;
 using Application.ServiceManager;
 
-namespace Infrastructure.Services;
+namespace Application.Services;
 
 public class ServiceManager : IServiceManager
 {
