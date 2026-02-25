@@ -1,0 +1,81 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Invoices";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">My Invoices</h2>
+    <a asp-page="/Invoices/Create" class="btn btn-primary">
+        + New Invoice
+    </a>
+</div>
+
+<div class="card card-custom">
+        <div class="card card-custom p-4">
+            <div class="table-responsive">
+                <table class="table table-modern mb-0">
+                    <thead>
+                        <tr>
+                            <th>Invoice</th>
+                            <th>Status</th>
+                            <th>Total</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Invoices.Any())
+                        {
+                            foreach (var invoice in Model.Invoices)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">
+                                            #@invoice.InvoiceNumber
+                                        </div>
+                                        <small class="text-muted">
+                                            @invoice.Id
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge">
+                                            @invoice.Status
+                                        </span>
+                                    </td>
+                                    <td class="fw-semibold">
+                                        $@invoice.TotalAmount
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-page="/Invoices/Edit" asp-route-id="@invoice.Id"
+                                           class="btn btn-light btn-sm me-2">
+                                            Edit
+                                        </a>
+
+                                        <a asp-page="/Invoices/Delete" asp-route-id="@invoice.Id"
+                                           class="btn btn-danger-soft btn-sm">
+                                            Delete
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center py-5">
+                                    <div class="empty-state">
+                                        <h5>No invoices yet</h5>
+                                        <p class="text-muted">Start by creating your first invoice.</p>
+                                        <a asp-page="/Invoices/Create" class="btn btn-primary mt-2">
+                                            Create Invoice
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+   

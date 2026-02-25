@@ -52,4 +52,13 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
         await _context.SaveChangesAsync();
     }
+    public IQueryable<T> Query()
+    {
+        return _db.AsQueryable();
+    }
+
+    public void RemoveRange(IEnumerable<T> entities)
+    {
+        _db.RemoveRange(entities);
+    }
 }

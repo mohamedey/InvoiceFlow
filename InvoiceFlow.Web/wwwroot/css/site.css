@@ -1,31 +1,68 @@
-html {
-  font-size: 14px;
-}
-
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
-
 body {
-  margin-bottom: 60px;
+    background-color: #f5f7fa;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+.navbar-brand {
+    letter-spacing: 1px;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+.card-custom {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: all 0.2s ease-in-out;
+}
+
+    .card-custom:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+    }
+
+.btn-primary {
+    border-radius: 8px;
+    padding: 8px 16px;
+}
+
+.table-custom {
+    background-color: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+}
+
+    .table-custom th {
+        background-color: #212529;
+        color: white;
+        font-weight: 500;
+    }
+
+    .table-custom td {
+        vertical-align: middle;
+    }
+
+.dashboard-card {
+    padding: 25px;
+    border-radius: 12px;
+    color: white;
+}
+
+.bg-dashboard-1 {
+    background: linear-gradient(135deg, #0d6efd, #3d8bfd);
+}
+
+.bg-dashboard-2 {
+    background: linear-gradient(135deg, #198754, #20c997);
+}
+
+.bg-dashboard-3 {
+    background: linear-gradient(135deg, #dc3545, #fd7e14);
+}
+
+.form-control {
+    border-radius: 8px;
+}
+
+.footer {
+    font-size: 14px;
 }
