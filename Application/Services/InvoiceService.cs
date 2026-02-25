@@ -2,6 +2,7 @@
 using Application.Interfaces.IRepository;
 using Application.Interfaces.IServices;
 using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Services;
 
@@ -9,13 +10,16 @@ public class InvoiceService : IInvoiceService
 {
     private readonly IGenericRepository<Invoice> _invoiceRepo;
     private readonly IGenericRepository<Product> _productRepo;
+    private readonly IGenericRepository<InvoiceItem> _invoiceItemRepo;
 
     public InvoiceService(
         IGenericRepository<Invoice> invoiceRepo,
-        IGenericRepository<Product> productRepo)
+        IGenericRepository<Product> productRepo,
+        IGenericRepository<InvoiceItem> invoiceItemRepo)
     {
         _invoiceRepo = invoiceRepo;
         _productRepo = productRepo;
+        _invoiceItemRepo = invoiceItemRepo;
     }
 
     public async Task<Guid> CreateAsync(CreateInvoiceDto dto, string userId)
@@ -26,7 +30,7 @@ public class InvoiceService : IInvoiceService
         var invoice = new Invoice
         {
             Id = Guid.NewGuid(),
-            InvoiceNumber = Guid.NewGuid().ToString().Substring(0, 8),
+            InvoiceNumber = Guid.NewGuid().ToString("N")[..8],
             IssueDate = DateTime.UtcNow,
             DueDate = dto.DueDate,
             Status = "Issued",
@@ -69,9 +73,10 @@ public class InvoiceService : IInvoiceService
         return invoice.Id;
     }
 
-    public async Task UpdateAsync(Guid id, CreateInvoiceDto dto, string userId)
+    public async Task<string> UpdateAsync(Guid id, CreateInvoiceDto dto, string userId)
     {
-        var invoice = await _invoiceRepo.GetByIdAsync(id);
+        var invoice = await _invoiceRepo.Query()
+            .FirstOrDefaultAsync(x => x.Id == id);
 
         if (invoice == null)
             throw new Exception("Invoice not found");
@@ -79,12 +84,18 @@ public class InvoiceService : IInvoiceService
         if (invoice.UserId != userId)
             throw new UnauthorizedAccessException();
 
-        if (dto.Items == null || !dto.Items.Any())
-            throw new Exception("Invoice must contain at least one item");
-
         invoice.DueDate = dto.DueDate;
         invoice.Status = "Updated";
-        invoice.Items.Clear();
+
+        await _invoiceRepo.SaveAsync();
+
+        var oldItems = _invoiceItemRepo.Query()
+            .Where(x => x.InvoiceId == id)
+            .ToList();
+
+        _invoiceItemRepo.RemoveRange(oldItems);
+
+        await _invoiceRepo.SaveAsync();
 
         decimal subTotal = 0;
 
@@ -92,15 +103,12 @@ public class InvoiceService : IInvoiceService
         {
             var product = await _productRepo.GetByIdAsync(item.ProductId);
 
-            if (product == null)
-                throw new Exception("Product not found");
-
             var lineTotal = product.UnitPrice * item.Quantity;
 
-            invoice.Items.Add(new InvoiceItem
+            await _invoiceItemRepo.AddAsync(new InvoiceItem
             {
                 Id = Guid.NewGuid(),
-                InvoiceId = invoice.Id,
+                InvoiceId = id,
                 ProductId = product.Id,
                 Quantity = item.Quantity,
                 UnitPrice = product.UnitPrice,
@@ -114,11 +122,11 @@ public class InvoiceService : IInvoiceService
         invoice.TaxAmount = subTotal * 0.15m;
         invoice.TotalAmount = invoice.SubTotal + invoice.TaxAmount;
 
-        await _invoiceRepo.UpdateAsync(invoice);
         await _invoiceRepo.SaveAsync();
-    }
 
-    public async Task DeleteAsync(Guid id, string userId, bool isAdmin)
+        return "Invoice updated successfully";
+    }
+    public async Task<string> DeleteAsync(Guid id, string userId, bool isAdmin)
     {
         var invoice = await _invoiceRepo.GetByIdAsync(id);
 
@@ -130,6 +138,8 @@ public class InvoiceService : IInvoiceService
 
         await _invoiceRepo.DeleteAsync(invoice);
         await _invoiceRepo.SaveAsync();
+
+        return "Invoice deleted successfully";
     }
 
     public async Task<InvoiceResponseDto> GetByIdAsync(Guid id, string userId, bool isAdmin)
@@ -151,31 +161,69 @@ public class InvoiceService : IInvoiceService
         };
     }
 
-    public async Task<IEnumerable<InvoiceResponseDto>> GetAllAsync()
+    public async Task<InvoiceDetailsDto> GetDetailsAsync(Guid id, string userId, bool isAdmin)
     {
-        var invoices = await _invoiceRepo.GetAllAsync();
+        var invoice = await _invoiceRepo.Query()
+            .Include(x => x.Items)
+            .ThenInclude(i => i.Product)
+            .FirstOrDefaultAsync(x => x.Id == id);
 
-        return invoices.Select(x => new InvoiceResponseDto
+        if (invoice == null)
+            throw new Exception("Invoice not found");
+
+        if (!isAdmin && invoice.UserId != userId)
+            throw new UnauthorizedAccessException();
+
+        return new InvoiceDetailsDto
         {
-            Id = x.Id,
-            InvoiceNumber = x.InvoiceNumber,
-            TotalAmount = x.TotalAmount,
-            Status = x.Status
-        });
+            Id = invoice.Id,
+            InvoiceNumber = invoice.InvoiceNumber,
+            CustomerId = invoice.CustomerId,
+            DueDate = invoice.DueDate,
+            Status = invoice.Status,
+            TotalAmount = invoice.TotalAmount,
+            Items = invoice.Items.Select(i => new InvoiceItemDetailsDto
+            {
+                ProductId = i.ProductId,
+                ProductName = i.Product.Name,
+                Quantity = i.Quantity,
+                UnitPrice = i.UnitPrice
+            }).ToList()
+        };
     }
 
-    public async Task<IEnumerable<InvoiceResponseDto>> GetByUserAsync(string userId)
+    public async Task<PagedResult<InvoiceResponseDto>> GetPagedByUserAsync(
+     string userId,
+     bool isAdmin,
+     int page,
+     int pageSize)
     {
-        var invoices = await _invoiceRepo.GetAllAsync();
+        var query = _invoiceRepo.Query();
 
-        return invoices
-            .Where(x => x.UserId == userId)
+        if (!isAdmin)
+            query = query.Where(x => x.UserId == userId);
+
+        var total = await query.CountAsync();
+
+        var data = await query
+            .OrderByDescending(x => x.IssueDate)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(x => new InvoiceResponseDto
             {
                 Id = x.Id,
                 InvoiceNumber = x.InvoiceNumber,
                 TotalAmount = x.TotalAmount,
                 Status = x.Status
-            });
+            })
+            .ToListAsync();
+
+        return new PagedResult<InvoiceResponseDto>
+        {
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total,
+            Data = data
+        };
     }
 }

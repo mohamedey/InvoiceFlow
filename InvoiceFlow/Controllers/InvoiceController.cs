@@ -32,8 +32,9 @@ public class InvoiceController : ControllerBase
     public async Task<IActionResult> Update(Guid id, CreateInvoiceDto dto)
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        await _invoiceService.UpdateAsync(id, dto, userId);
-        return NoContent();
+        var message = await _invoiceService.UpdateAsync(id, dto, userId);
+
+        return Ok(new { message });
     }
 
     [HttpDelete("{id}")]
@@ -43,23 +44,32 @@ public class InvoiceController : ControllerBase
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var isAdmin = User.IsInRole("Admin");
 
-        await _invoiceService.DeleteAsync(id, userId, isAdmin);
-        return NoContent();
-    }
+        var message = await _invoiceService.DeleteAsync(id, userId, isAdmin);
 
-    [HttpGet("my")]
-    public async Task<IActionResult> GetMy()
+        return Ok(new { message });
+    }
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetDetails(Guid id)
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var data = await _invoiceService.GetByUserAsync(userId);
+        var isAdmin = User.IsInRole("Admin");
+
+        var data = await _invoiceService.GetDetailsAsync(id, userId, isAdmin);
         return Ok(data);
     }
 
-    [HttpGet]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> GetAll()
+    [HttpGet("my")]
+    public async Task<IActionResult> GetMy(int page = 1, int pageSize = 10)
     {
-        var data = await _invoiceService.GetAllAsync();
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var isAdmin = User.IsInRole("Admin");
+
+        var data = await _invoiceService.GetPagedByUserAsync(
+            userId,
+            isAdmin,
+            page,
+            pageSize);
+
         return Ok(data);
     }
 }
