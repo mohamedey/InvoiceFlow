@@ -28,10 +28,9 @@ namespace InvoiceFlow.Web.Pages
                 var claims = new List<Claim>
         {
             new Claim(ClaimTypes.Name, result.Email),
-            new Claim(ClaimTypes.Role, result.Role),
-            new Claim("JWT", result.Token)
+            new Claim(ClaimTypes.Role, result.Role)
         };
-
+                HttpContext.Session.SetString("JWT", result.Token);
                 var identity = new ClaimsIdentity(claims, "CookieAuth");
                 var principal = new ClaimsPrincipal(identity);
 

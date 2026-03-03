@@ -29,11 +29,16 @@ public class DeleteModel : PageModel
     public async Task<IActionResult> OnPostAsync(Guid id)
     {
         var client = _factory.CreateClient("ApiClient");
+
         var response = await client.DeleteAsync($"invoice/{id}");
 
         if (!response.IsSuccessStatusCode)
+        {
+            TempData["Error"] = "Failed to delete invoice.";
             return RedirectToPage("/Invoices/Index");
+        }
 
+        TempData["Success"] = "Invoice deleted successfully.";
         return RedirectToPage("/Invoices/Index");
     }
 }

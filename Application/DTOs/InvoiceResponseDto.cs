@@ -12,6 +12,7 @@ public class InvoiceDetailsDto
     public Guid Id { get; set; }
     public string? InvoiceNumber { get; set; }
     public Guid CustomerId { get; set; }
+    public string? CustomerName { get; set; }
     public DateTime DueDate { get; set; }
     public string? Status { get; set; }
     public decimal TotalAmount { get; set; }

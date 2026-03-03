@@ -1,25 +1,37 @@
 ﻿using Application.DTOs;
 using InvoiceFlow.Web.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace InvoiceFlow.Web.Pages
+namespace InvoiceFlow.Web.Pages.Dashboard;
+
+public class DashboardModel : PageModel
 {
-    [Authorize]
-    public class DashboardModel : PageModel
+    private readonly DashboardApiService _dashboardService;
+
+    public DashboardModel(DashboardApiService dashboardService)
     {
-        private readonly InvoiceApiService _service;
+        _dashboardService = dashboardService;
+    }
 
-        public List<InvoiceResponseDto> Invoices { get; set; }
+    public decimal TotalRevenue { get; set; }
+    public int TotalInvoices { get; set; }
 
-        public DashboardModel(InvoiceApiService service)
-        {
-            _service = service;
-        }
+    public List<InvoiceResponseDto> Invoices { get; set; } = new();
 
-        public async Task OnGetAsync()
-        {
-            Invoices = await _service.GetMyAsync();
-        }
+    public int CurrentPage { get; set; }
+    public int TotalPages { get; set; }
+
+    public async Task OnGetAsync(int page = 1)
+    {
+        int pageSize = 5;
+
+        var result = await _dashboardService.GetMyInvoicesAsync(page, pageSize);
+
+        Invoices = result.Data;
+        TotalInvoices = result.TotalCount;
+        TotalRevenue = result.Data.Sum(x => x.TotalAmount);
+
+        CurrentPage = page;
+        TotalPages = (int)Math.Ceiling((double)result.TotalCount / pageSize);
     }
 }

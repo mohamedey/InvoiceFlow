@@ -164,9 +164,10 @@ public class InvoiceService : IInvoiceService
     public async Task<InvoiceDetailsDto> GetDetailsAsync(Guid id, string userId, bool isAdmin)
     {
         var invoice = await _invoiceRepo.Query()
-            .Include(x => x.Items)
-            .ThenInclude(i => i.Product)
-            .FirstOrDefaultAsync(x => x.Id == id);
+      .Include(x => x.Customer)
+      .Include(x => x.Items)
+          .ThenInclude(i => i.Product)
+      .FirstOrDefaultAsync(x => x.Id == id);
 
         if (invoice == null)
             throw new Exception("Invoice not found");
@@ -179,6 +180,7 @@ public class InvoiceService : IInvoiceService
             Id = invoice.Id,
             InvoiceNumber = invoice.InvoiceNumber,
             CustomerId = invoice.CustomerId,
+            CustomerName = invoice.Customer.Name,
             DueDate = invoice.DueDate,
             Status = invoice.Status,
             TotalAmount = invoice.TotalAmount,

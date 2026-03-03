@@ -2,24 +2,18 @@ using InvoiceFlow.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddRazorPages();
 
-builder.Services.AddHttpClient("ApiClient", (sp, client) =>
-{
-    var config = sp.GetRequiredService<IConfiguration>();
-    var baseUrl = config["ApiSettings:BaseUrl"];
-    client.BaseAddress = new Uri(baseUrl);
-});
-// Register AuthApiService for dependency injection
-builder.Services.AddScoped<AuthApiService>();
-// Add session support
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession();
-// Register HttpContextAccessor and InvoiceApiService for dependency injection
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<InvoiceApiService>();
-// Configure cookie authentication
+
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(1);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 builder.Services.AddAuthentication("CookieAuth")
     .AddCookie("CookieAuth", options =>
     {
@@ -28,8 +22,7 @@ builder.Services.AddAuthentication("CookieAuth")
     });
 
 builder.Services.AddAuthorization();
-// Register JwtHandler for dependency injection
-builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddTransient<JwtHandler>();
 
 builder.Services.AddHttpClient("ApiClient", client =>
@@ -38,26 +31,30 @@ builder.Services.AddHttpClient("ApiClient", client =>
 })
 .AddHttpMessageHandler<JwtHandler>();
 
+builder.Services.AddScoped<AuthApiService>();
+builder.Services.AddScoped<InvoiceApiService>();
+builder.Services.AddScoped<DashboardApiService>();
+builder.Services.AddScoped<CustomerApiService>();
+builder.Services.AddScoped<ProductApiService>();
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
-}
-
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseSession();
+
+app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapStaticAssets();
-app.MapRazorPages()
-   .WithStaticAssets();
-// Enable session middleware
-app.UseSession();
+app.MapRazorPages();
+
+app.MapGet("/", context =>
+{
+    context.Response.Redirect("/Login");
+    return Task.CompletedTask;
+});
 
 app.Run();
