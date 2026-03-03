@@ -1,0 +1,31 @@
+﻿@page
+@model InvoiceFlow.Web.Pages.Products.OurProductsModel
+
+<h2 style="color:aliceblue">Our Products</h2>
+<a asp-page ="/Products/AddProduct" class="btn btn-primary mb-3">
+    <i class="bi bi-plus-lg"></i> Add Product
+</a>
+
+<div class="row">
+    @foreach (var product in Model.Products)
+    {
+        <div class="col-md-4">
+            <div class="card mt-3 ">
+                <div class="card-body mt-2">
+                    <h5 class="card-title">Name:<b> @product.Name</b></h5>
+                    <p class="card-text">Description: @product.Description</p>
+                    <p class="card-text">Price: $@product.UnitPrice</p>
+
+
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a href="@Url.Page("/Products/EditProduct", new { id = product.Id })" class="btn btn-warning">Edit</a>
+                        <form method="post" asp-page-handler="DeleteProduct" asp-route-id="@product.Id" style="display:inline;">
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>

@@ -8,6 +8,8 @@
     <title>@ViewData["Title"] - InvoiceFlow</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body>
     <header>
@@ -25,17 +27,22 @@
                         @if (User.Identity.IsAuthenticated)
                         {
                             <li class="nav-item">
-                                <a class="nav-link" asp-page="/Dashboard">Dashboard</a>
+                                <a class="nav-link" asp-page="/Dashboard">
+                                    <i class="bi bi-clipboard2-data"></i> Dashboard
+                                </a>
                             </li>
 
                             <li class="nav-item">
-                                <a class="nav-link" asp-page="/Invoices/Index">Invoices</a>
+                                <a class="nav-link" asp-page="/Invoices/Index"><i class="bi bi-receipt"></i> Invoices</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-page="/Products/OurProducts"><i class="bi bi-basket2"></i> Our Products</a>
                             </li>
 
                             @if (User.IsInRole("Admin"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-page="/Admin/Index">Admin Panel</a>
+                                    <a class="nav-link" asp-page="/Admin/Index"><i class="bi bi-person-gear"></i> Admin Panel</a>
                                 </li>
                             }
                         }
@@ -46,17 +53,17 @@
                         {
                             <li class="nav-item">
                                 <span class="navbar-text text-white me-3">
-                                    @User.Identity.Name
+                                    <i class="bi bi-person-circle"></i> @User.Identity.Name
                                 </span>
                             </li>
                             <li class="nav-item">
-                                <a class="btn btn-outline-light btn-sm" asp-page="/Logout">Logout</a>
+                                <a class="btn btn-outline-light btn-sm" asp-page="/Logout"> <i class="bi bi-box-arrow-left"></i> Logout</a>
                             </li>
                         }
                         else
                         {
                             <li class="nav-item">
-                                <a class="btn btn-outline-light btn-sm" asp-page="/Login">Login</a>
+                                <a class="btn btn-outline-light btn-sm" asp-page="/Login"> <i class="bi bi-box-arrow-in-right"></i> Login</a>
                             </li>
                         }
                     </ul>
@@ -79,5 +86,64 @@
 
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Action</h5>
+                </div>
+                <div class="modal-body">
+                    Are you sure?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmBtn">Yes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <partial name="_Toast" />
+    <div id="globalLoader" class="d-none position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 justify-content-center align-items-center" style="z-index:9999;">
+        <div class="spinner-border text-light" style="width:4rem;height:4rem;"></div>
+    </div>
+
+    <script>
+        function showLoader() {
+            document.getElementById("globalLoader").classList.remove("d-none");
+            document.getElementById("globalLoader").classList.add("d-flex");
+        }
+
+        document.querySelectorAll("form").forEach(form => {
+            form.addEventListener("submit", function (e) {
+
+                if (form.dataset.confirm === "true") {
+                    const confirmed = confirm("Are you sure you want to delete this invoice?");
+                    if (!confirmed) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+
+                showLoader();
+            });
+        });
+    </script>
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Confirmation</h5>
+                </div>
+                <div class="modal-body">
+                    This action cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

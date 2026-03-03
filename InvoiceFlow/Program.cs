@@ -3,6 +3,7 @@ using Application.Interfaces.IRepository;
 using Application.Interfaces.IServices;
 using Application.ServiceManager;
 using Application.Services;
+using Domain.Entities;
 using Domain.Identity;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -10,10 +11,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -52,9 +54,10 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = jwtSettings["Issuer"],
         ValidAudience = jwtSettings["Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(key))
+            Encoding.UTF8.GetBytes(key)),
+        RoleClaimType = ClaimTypes.Role
     };
-options.Events = new JwtBearerEvents
+    options.Events = new JwtBearerEvents
     {
         OnAuthenticationFailed = context =>
         {
@@ -80,7 +83,7 @@ options.Events = new JwtBearerEvents
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
-
+builder.Services.AddScoped<IProductService, ProductService>();
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())

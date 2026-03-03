@@ -1,4 +1,6 @@
+using Application.DTOs;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Net.Http.Json;
 
@@ -14,10 +16,29 @@ public class IndexModel : PageModel
         _factory = factory;
     }
 
-    public async Task OnGetAsync()
+    public async Task OnGetAsync(int page = 1)
     {
         var client = _factory.CreateClient("ApiClient");
-        Invoices = await client.GetFromJsonAsync<List<InvoiceResponseDto>>("invoice/my") ?? new();
+
+        var result = await client.GetFromJsonAsync<PagedResult<InvoiceResponseDto>>
+            ($"invoice/my?page={page}&pageSize=10");
+
+        Invoices = result?.Data ?? new();
+    }
+    public async Task<IActionResult> OnPostDeleteAsync(Guid id)
+    {
+        var client = _factory.CreateClient("ApiClient");
+
+        var response = await client.DeleteAsync($"invoice/{id}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            TempData["Error"] = "Delete failed";
+            return RedirectToPage();
+        }
+
+        TempData["Success"] = "Invoice deleted successfully";
+        return RedirectToPage();
     }
 }
 

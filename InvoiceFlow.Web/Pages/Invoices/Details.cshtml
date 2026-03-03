@@ -1,0 +1,125 @@
+﻿@page "{id:guid}"
+@model DetailsModel
+@{
+    ViewData["Title"] = "Invoice";
+}
+
+<div class="container my-5">
+
+    @if (Model.Invoice == null)
+    {
+        <div class="alert alert-danger">
+            Invoice not found
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-lg border-0">
+
+            <!-- Header -->
+            <div class="card-body border-bottom">
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h2 class="fw-bold mb-1">Invoice</h2>
+                        <div class="text-muted">#@Model.Invoice.InvoiceNumber</div>
+                    </div>
+
+                    <div class="col-md-6 text-md-end">
+                        <span class="badge bg-primary fs-6 px-3 py-2">
+                            @Model.Invoice.Status
+                        </span>
+                        <div class="mt-2 fw-bold text-success fs-5">
+                            @Model.Invoice.TotalAmount.ToString("C")
+                        </div>
+                    </div>
+                </div>
+                @if (User.IsInRole("Admin"))
+                {
+                    <a asp-page-handler="Download"
+                       asp-route-id="@Model.Invoice.Id"
+                       class="btn btn-dark btn-sm mt-2 p-2">
+                        <i class="bi bi-download"></i>  Download PDF
+                    </a>
+                }
+            </div>
+
+            <!-- Customer & Dates -->
+            <div class="card-body border-bottom">
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-uppercase text-muted">Billed To</h6>
+                        <div class="fw-semibold fs-5">
+                            <strong>@Model.Invoice.CustomerName</strong>
+                        </div>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <div class="text-muted small">
+                                Customer ID: @Model.Invoice.CustomerId
+                            </div>
+                        }
+                    </div>
+
+                    <div class="col-md-6 text-md-end">
+                        <h6 class="text-uppercase text-muted">Due Date</h6>
+                        <div class="fw-semibold">
+                            @Model.Invoice.DueDate.ToString("dd MMM yyyy")
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Items Table -->
+            <div class="card-body">
+
+                <table class="table align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Product</th>
+                            <th class="text-center">Qty</th>
+                            <th class="text-end">Unit Price</th>
+                            <th class="text-end">Line Total</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var item in Model.Invoice.Items)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@item.ProductName</td>
+                                <td class="text-center">@item.Quantity</td>
+                                <td class="text-end">@item.UnitPrice.ToString("C")</td>
+                                <td class="text-end fw-semibold">
+                                    @((item.UnitPrice * item.Quantity).ToString("C"))
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <!-- Summary -->
+                <div class="row mt-4">
+                    <div class="col-md-4 offset-md-8">
+                        <table class="table">
+                            <tr>
+                                <th class="text-end fs-5">Total:</th>
+                                <th class="text-end text-success fs-5">
+                                    @Model.Invoice.TotalAmount.ToString("C")
+                                </th>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="text-end mt-3">
+                    <a asp-page="/Invoices/Index" class="btn btn-outline-warning text-dark">
+                        <i class="bi bi-skip-backward"></i> Back to Invoices
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    }
+
+</div>

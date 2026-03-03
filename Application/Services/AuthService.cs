@@ -83,6 +83,50 @@ namespace Application.Services
                 Role = role
             };
         }
+        public async Task<List<UserRoleDto>> GetAllUsersAsync()
+        {
+            var users = _userManager.Users.ToList();
+            var result = new List<UserRoleDto>();
+
+            foreach (var user in users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+
+                result.Add(new UserRoleDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    Role = roles.FirstOrDefault() ?? "User"
+                });
+            }
+
+            return result;
+        }
+
+        public async Task<(bool Success, string Message)> UpdateRoleAsync(
+    string userId,
+    string newRole,
+    string currentAdminId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+                return (false, "User not found");
+
+            if (userId == currentAdminId && newRole != "Admin")
+                return (false, "You cannot remove your own Admin role");
+
+            if (!await _roleManager.RoleExistsAsync(newRole))
+                return (false, "Role does not exist");
+
+            var currentRoles = await _userManager.GetRolesAsync(user);
+
+            await _userManager.RemoveFromRolesAsync(user, currentRoles);
+            await _userManager.AddToRoleAsync(user, newRole);
+
+            return (true, "Role updated successfully");
+        }
+
         private async Task<string> GenerateToken(ApplicationUser user)
         {
             var jwtSettings = _configuration.GetSection("JwtSettings");

@@ -17,8 +17,8 @@ public class JwtHandler : DelegatingHandler
         CancellationToken cancellationToken)
     {
         var token = _contextAccessor.HttpContext?
-            .User?.FindFirst("JWT")?.Value;
-
+      .Session.GetString("JWT");
+        var test=_contextAccessor.HttpContext?.Session.GetString("JWT");
         if (!string.IsNullOrEmpty(token))
         {
             request.Headers.Authorization =
